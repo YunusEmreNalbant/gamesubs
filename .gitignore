@@ -1,0 +1,17 @@
+# Derleme çıktıları ve yerel artefaktlar (ekran görüntüleri, günlükler, imzalı paket içerir)
+node_modules/
+dist/
+build/
+*.wgt
+*.map
+# Sertifika, anahtar, gizli bilgiler: ASLA commit etme
+*.p12
+*.pfx
+*.pem
+*.key
+.env
+.env.*
+# macOS / editör
+.DS_Store
+.vscode/
+.idea/

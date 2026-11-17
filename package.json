@@ -1,0 +1,22 @@
+{
+  "name": "gamesubs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GameSubs - PS5 oyun altyazılarını OCR + yapay zekâ ile Türkçeye çevirip Samsung TV'de oyun görüntüsünün üstüne basar",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "node scripts/build.mjs",
+    "mock": "node tools/mock-server.mjs",
+    "build:ocr": "mkdir -p build && swiftc -O mac/ocr/main.swift -o build/gl-ocr",
+    "start": "scripts/start.sh",
+    "panel": "open http://localhost:8766"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.6.0",
+    "ws": "^8.18.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.9.0"
+  }
+}

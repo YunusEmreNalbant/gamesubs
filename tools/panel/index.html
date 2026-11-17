@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GameSubs Panel</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --card: #ffffff; --text: #17181c; --muted: #6b6f7a; --line: #e3e5ea;
+    --accent: #2f6fed; --accent-text: #ffffff; --ok: #1f9d55; --warn: #c27c0e; --err: #d13b3b; --chip: #eef0f4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #111214; --card: #1b1c20; --text: #ececef; --muted: #9a9ea8; --line: #2b2d33;
+            --accent: #5b8cff; --accent-text: #0d0e10; --ok: #3ccf7a; --warn: #f0b04a; --err: #ff6b6b; --chip: #24262c; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--card); position: sticky; top: 0; z-index: 2; }
+  h1 { font-size: 17px; margin: 0 8px 0 0; letter-spacing: .2px; }
+  .chip { background: var(--chip); border-radius: 999px; padding: 3px 10px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .chip b { color: var(--text); font-weight: 600; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; background: var(--muted); }
+  .dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); } .dot.err { background: var(--err); }
+  main { display: grid; grid-template-columns: minmax(280px, 360px) 1fr; gap: 16px; padding: 16px 20px; max-width: 1280px; margin: 0 auto; }
+  @media (max-width: 820px) { main { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin: 0 0 10px; font-weight: 600; }
+  .big { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--chip); color: var(--text); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+  button:hover { border-color: var(--muted); }
+  button:disabled { opacity: .45; cursor: default; }
+  .toggle { padding: 14px 10px; font-size: 15px; font-weight: 600; text-align: center; }
+  .toggle .sub { display: block; font-size: 11px; font-weight: 500; color: var(--muted); margin-top: 2px; }
+  .toggle.on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .toggle.on .sub { color: inherit; opacity: .8; }
+  .toggle.alert { background: var(--warn); color: #111; border-color: var(--warn); }
+  .row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+  .row label { width: 92px; color: var(--muted); flex: none; }
+  .row input[type=range] { flex: 1; }
+  .row .val { width: 54px; text-align: right; font-variant-numeric: tabular-nums; }
+  select, input[type=text] { font: inherit; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; width: 100%; }
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button { flex: 1; border: 0; border-radius: 0; background: transparent; padding: 7px 4px; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button.on { background: var(--accent); color: var(--accent-text); }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
+  .err-box { color: var(--err); font-size: 12px; margin-top: 8px; word-break: break-word; }
+  .histhead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .histhead h2 { margin: 0; flex: 1; }
+  .histhead label { color: var(--muted); font-size: 12px; display: flex; gap: 6px; align-items: center; }
+  #hist { list-style: none; margin: 0; padding: 0; max-height: calc(100vh - 170px); overflow: auto; }
+  #hist li { border-top: 1px solid var(--line); padding: 9px 2px; }
+  #hist li:first-child { border-top: 0; }
+  .meta { font-size: 11px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
+  .en { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .tr { font-size: 15px; font-weight: 600; margin-top: 2px; }
+  .badge { border-radius: 4px; padding: 0 6px; background: var(--chip); }
+  .badge.skip { color: var(--muted); } .badge.err { color: var(--err); } .badge.cache { color: var(--ok); }
+  li.skipped .en { text-decoration: line-through; opacity: .7; }
+  .empty { color: var(--muted); padding: 24px 4px; text-align: center; }
+  kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; }
+  #offline { display: none; background: var(--err); color: #fff; text-align: center; padding: 6px; font-size: 13px; }
+</style>
+</head>
+<body>
+<div id="offline">Köprüye bağlanılamıyor — <code>npm run start</code> çalışıyor mu? Yeniden deneniyor…</div>
+<header>
+  <h1>GameSubs</h1>
+  <span class="chip"><span class="dot" id="d-tv"></span>TV <b id="c-tv">—</b></span>
+  <span class="chip"><span class="dot" id="d-ocr"></span>OCR <b id="c-ocr">—</b></span>
+  <span class="chip">Çeviri <b id="c-prov">—</b></span>
+  <span class="chip" id="c-fb" hidden>Yedek <b id="c-fbv"></b></span>
+</header>
+
+<main>
+  <section>
+    <div class="card">
+      <h2>Kontrol</h2>
+      <div class="big">
+        <button class="toggle" id="b-vis" disabled>Altyazı<span class="sub" id="b-vis-sub">TV bağlı değil</span></button>
+        <button class="toggle" id="b-pause">Çeviri<span class="sub" id="b-pause-sub">—</span></button>
+      </div>
+      <div class="hint">Kısayollar: <kbd>S</kbd> altyazı aç/kapat · <kbd>P</kbd> çeviriyi duraklat</div>
+      <div class="err-box" id="err" hidden></div>
+    </div>
+
+    <div class="card">
+      <h2>TV altyazı görünümü</h2>
+      <div class="row"><label for="r-size">Boyut</label><input type="range" id="r-size" min="24" max="140" step="4"><span class="val" id="v-size">—</span></div>
+      <div class="row"><label for="r-pos">Alttan konum</label><input type="range" id="r-pos" min="0" max="90" step="1"><span class="val" id="v-pos">—</span></div>
+      <div class="row"><label for="s-bg">Arka plan</label>
+        <select id="s-bg"><option value="none">Yok (gölgeli yazı)</option><option value="semi">Yarı saydam kutu</option><option value="solid">Opak kutu</option></select></div>
+      <div class="row"><label for="t-test">Test</label><input type="text" id="t-test" placeholder="Örnek: Ğüşıöç İ — test altyazısı"><button id="b-test">Gönder</button></div>
+      <div class="hint" id="style-hint">TV bağlanınca ayarlar TV'den okunur.</div>
+    </div>
+
+    <div class="card">
+      <h2>Filtre</h2>
+      <div class="seg" id="seg-filter">
+        <button data-v="normal">Normal</button><button data-v="strict">Sıkı</button><button data-v="all">Hepsi</button>
+      </div>
+      <div class="hint" id="filter-hint"></div>
+    </div>
+
+    <div class="card">
+      <h2>Çeviri sağlayıcısı</h2>
+      <div class="row"><label for="s-prov">Sağlayıcı</label><select id="s-prov"></select></div>
+      <div class="row"><label for="t-model">Model</label><input type="text" id="t-model" placeholder="boş: varsayılan"></div>
+      <div class="row" id="row-url" hidden><label for="t-url">Adres</label><input type="text" id="t-url" placeholder="http://localhost:1234/v1"></div>
+      <div class="row"><label></label><button id="b-prov">Uygula</button></div>
+      <div class="hint">Anahtarlar köprüyü başlattığın terminaldeki ortam değişkenlerinden okunur.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="histhead">
+      <h2>Altyazı geçmişi</h2>
+      <label><input type="checkbox" id="cb-skip"> Atlananları göster</label>
+      <button id="b-copy">Kopyala</button>
+      <button id="b-clear">Temizle</button>
+    </div>
+    <ul id="hist"><li class="empty">Henüz altyazı yok.</li></ul>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const FILTER_HINT = {
+  normal: "Konuşmacı etiketli satırlar ve cümleye benzeyenler çevrilir; düğme ipuçları atlanır.",
+  strict: "Yalnızca \"Ad: metin\" biçimli satırlar çevrilir.",
+  all: "Düğme ipuçları dışında her şey çevrilir.",
+};
+const NEEDS_URL = new Set(["custom", "lmstudio"]);
+let ws = null, state = null, items = [];
+let showSkipped = false;
+try { showSkipped = localStorage.getItem("gs.showSkipped") === "1"; } catch {}
+$("cb-skip").checked = showSkipped;
+
+function connect() {
+  ws = new WebSocket(`ws://${location.host}/ws`);
+  ws.onopen = () => { $("offline").style.display = "none"; };
+  ws.onclose = () => { $("offline").style.display = "block"; setTimeout(connect, 2000); };
+  ws.onmessage = (ev) => {
+    const m = JSON.parse(ev.data);
+    if (m.type === "state") { state = m.state; renderState(); }
+    else if (m.type === "history") { items = m.items; renderHistory(); }
+    else if (m.type === "entry") { items.push(m.item); if (items.length > 300) items.shift(); renderHistory(); }
+  };
+}
+const cmd = (c) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(c)); };
+
+function setDot(id, cls) { $(id).className = "dot " + cls; }
+
+function renderState() {
+  const s = state, tv = s.tvClients > 0, st = s.tvStyle;
+  $("c-tv").textContent = tv ? "bağlı" : "bağlı değil"; setDot("d-tv", tv ? "ok" : "err");
+  $("c-ocr").textContent = s.ocr; setDot("d-ocr", s.ocr === "hazır" ? "ok" : /hata|yeniden/.test(s.ocr) ? "err" : "warn");
+  $("c-prov").textContent = s.provider;
+  $("c-fb").hidden = !s.fallback; $("c-fbv").textContent = s.fallback || "";
+
+  const vis = $("b-vis");
+  vis.disabled = !st;
+  vis.classList.toggle("on", !!st && st.visible);
+  vis.classList.toggle("alert", !!st && !st.visible);
+  $("b-vis-sub").textContent = !st ? "TV bağlı değil" : st.visible ? "Açık — kapatmak için tıkla" : "Kapalı — açmak için tıkla";
+
+  const pb = $("b-pause");
+  pb.classList.toggle("on", !s.paused); pb.classList.toggle("alert", s.paused);
+  $("b-pause-sub").textContent = s.paused ? "Duraklatıldı — devam için tıkla" : "Çalışıyor — duraklatmak için tıkla";
+
+  for (const id of ["r-size", "r-pos", "s-bg"]) $(id).disabled = !st;   // görünüm ayarları TV'nin bildirdiği duruma bağlı
+  for (const id of ["t-test", "b-test"]) $(id).disabled = !tv;
+  if (st && !dragging) {
+    $("r-size").value = st.fontPx; $("v-size").textContent = st.fontPx + " px";
+    $("r-pos").value = st.bottomPct; $("v-pos").textContent = "%" + st.bottomPct;
+    $("s-bg").value = st.bg;
+  }
+  $("style-hint").textContent = st ? "Değişiklikler TV'de anında uygulanır ve TV'de kaydedilir." : "TV bağlanınca ayarlar TV'den okunur.";
+
+  for (const b of $("seg-filter").children) b.classList.toggle("on", b.dataset.v === s.filter);
+  $("filter-hint").textContent = FILTER_HINT[s.filter];
+
+  const sel = $("s-prov");
+  if (!sel.options.length) for (const p of s.providers) sel.add(new Option(p, p));
+  if (document.activeElement !== sel && !provDirty) sel.value = s.provider.split(":")[0];
+  $("row-url").hidden = !NEEDS_URL.has(sel.value);
+
+  const e = $("err"); e.hidden = !s.lastError; e.textContent = s.lastError || "";
+}
+
+const fmtTime = (t) => new Date(t).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function renderHistory() {
+  const list = items.filter((i) => showSkipped || !i.skipped).slice().reverse();
+  $("hist").innerHTML = list.length ? list.map((i) => {
+    const badges = [];
+    if (i.cached) badges.push('<span class="badge cache">önbellek</span>');
+    if (i.skipped) badges.push(`<span class="badge skip">atlandı: ${esc(i.skipped)}</span>`);
+    if (i.error) badges.push('<span class="badge err">hata</span>');
+    if (i.ms != null) badges.push(`<span>${(i.ms / 1000).toFixed(1)} sn</span>`);
+    if (i.by) badges.push(`<span>${esc(i.by)}</span>`);
+    return `<li class="${i.skipped ? "skipped" : ""}">
+      <div class="meta"><span>${fmtTime(i.t)}</span>${badges.join("")}</div>
+      <div class="en">${esc(i.en)}</div>
+      ${i.tr ? `<div class="tr">${esc(i.tr)}</div>` : ""}
+      ${i.error ? `<div class="err-box">${esc(i.error)}</div>` : ""}
+    </li>`;
+  }).join("") : '<li class="empty">Henüz altyazı yok.</li>';
+}
+
+// --- Kontroller ---
+$("b-vis").onclick = () => { if (state?.tvStyle) cmd({ cmd: "tvVisible", value: !state.tvStyle.visible }); };
+$("b-pause").onclick = () => { if (state) cmd({ cmd: "pause", value: !state.paused }); };
+
+let dragging = false, styleTimer;
+function sendStyle(patch) { clearTimeout(styleTimer); styleTimer = setTimeout(() => cmd({ cmd: "style", value: patch }), 120); }
+for (const [id, key, fmt] of [["r-size", "fontPx", (v) => v + " px"], ["r-pos", "bottomPct", (v) => "%" + v]]) {
+  const el = $(id);
+  el.addEventListener("pointerdown", () => { dragging = true; });
+  el.addEventListener("pointerup", () => { dragging = false; });
+  el.addEventListener("input", () => { $(id === "r-size" ? "v-size" : "v-pos").textContent = fmt(el.value); sendStyle({ [key]: Number(el.value) }); });
+}
+$("s-bg").onchange = () => cmd({ cmd: "style", value: { bg: $("s-bg").value } });
+$("b-test").onclick = () => cmd({ cmd: "test", text: $("t-test").value.trim() || "Ğüşıöç İ — GameSubs test altyazısı" });
+$("t-test").addEventListener("keydown", (e) => { if (e.key === "Enter") $("b-test").click(); });
+
+for (const b of $("seg-filter").children) b.onclick = () => cmd({ cmd: "filter", value: b.dataset.v });
+
+let provDirty = false;
+$("s-prov").onchange = () => { provDirty = true; $("row-url").hidden = !NEEDS_URL.has($("s-prov").value); };
+$("b-prov").onclick = () => {
+  provDirty = false;
+  cmd({ cmd: "provider", provider: $("s-prov").value, model: $("t-model").value.trim(), baseUrl: $("t-url").value.trim() });
+};
+
+$("cb-skip").onchange = () => { showSkipped = $("cb-skip").checked; try { localStorage.setItem("gs.showSkipped", showSkipped ? "1" : "0"); } catch {} renderHistory(); };
+$("b-clear").onclick = () => { if (confirm("Altyazı geçmişi temizlensin mi?")) cmd({ cmd: "clearHistory" }); };
+$("b-copy").onclick = async () => {
+  const text = items.filter((i) => i.tr).map((i) => `[${fmtTime(i.t)}] ${i.en}\n${i.tr}`).join("\n\n");
+  try { await navigator.clipboard.writeText(text); $("b-copy").textContent = "Kopyalandı"; setTimeout(() => ($("b-copy").textContent = "Kopyala"), 1500); }
+  catch { alert("Panoya kopyalanamadı."); }
+};
+
+document.addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey || /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
+  if (e.key === "s" || e.key === "S") $("b-vis").click();
+  if (e.key === "p" || e.key === "P") $("b-pause").click();
+});
+
+connect();
+</script>
+</body>
+</html>
