@@ -1,7 +1,7 @@
 # GameSubs
 
 PS5 oyunlarındaki **İngilizce altyazıyı canlı olarak Türkçeye çevirip**, Samsung TV'de oyun görüntüsünün **üstüne** basan kişisel bir proje.
-Ticari ürün değil; kendi evinde, kendi donanımında çalışsın diye yazıldı.
+Ticari ürün değil; kendi evinde, kendi donanımında çalışsın diye yazıldı. En önemliside GTA VI için yazıldı 😉​
 
 ![GameSubs: Far Cry Primal'da canlı Türkçe altyazı, Samsung TV](docs/images/tv-farcry-primal.jpg)
 
